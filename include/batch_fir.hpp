@@ -24,19 +24,23 @@ namespace cpfb{
         void filter(Array2D<D>& x){
             assert(x.nrows()==coeff_rev.nrows());
             assert(x.ncols()==state.ncols());
-            for(size_t i=0;i<coeff_rev.nrows();++i){
+            auto coeff_rev_nrows=coeff_rev.nrows();
+            auto state_ncols=state.ncols();
+            auto x_ncols=x.ncols();
+            auto coeff_rev_ncols=coeff_rev.ncols();
+            for(size_t i=0;i<coeff_rev_nrows;++i){
                 auto d1=&state(i,0);
                 auto d2=&x(i,0);
                 auto c1=&coeff_rev(i,0);
-                for(size_t j=0;j<state.ncols();++j){
+                for(size_t j=0;j<state_ncols;++j){
                     size_t k=0;
                     D x1=D();
-                    for(;k+j<state.ncols();++k){
+                    for(;k+j<state_ncols;++k){
                         x1+=c1[k]*d1[k+j];
                     }
-                    for(;k<coeff_rev.ncols();++k){
-                        assert(k+j-state.ncols()<x.ncols());
-                        x1+=c1[k]*d2[k+j-state.ncols()];
+                    for(;k<coeff_rev_ncols;++k){
+                        assert(k+j-state_ncols<x_ncols);
+                        x1+=c1[k]*d2[k+j-state_ncols];
                     }
                     d1[j]=x1;
                 }

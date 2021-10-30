@@ -5,6 +5,8 @@
 #include <fft_wrapper.hpp>
 #include "batch_fir.hpp"
 
+//#define INPLACE_ALGO
+
 namespace cpfb{
     template <std::floating_point T>
     struct CsPFB{
@@ -12,6 +14,9 @@ namespace cpfb{
         size_t batch;
         BatchFIR<T, std::complex<T>> fir;
         typename FftwTraits<T>::UniquePtrPlan plan;
+#ifndef INPLACE_ALGO
+        Array2D<std::complex<T>> buffer;
+#endif
 
         typename FftwTraits<T>::UniquePtrPlan init_plan(size_t nch, size_t batch){
             int n[]={(int)nch};
@@ -51,6 +56,9 @@ namespace cpfb{
         CsPFB(size_t nch1, const H& h0)
         :nch(nch1), batch((h0.end()-h0.begin())/nch1-1),
         fir(calc_coeffs(nch1, h0)), plan(init_plan(nch, batch))
+#ifndef INPLACE_ALGO
+        ,buffer(nch1, batch)
+#endif
         {
         }
 
@@ -62,7 +70,14 @@ namespace cpfb{
         template <std::forward_iterator X>
         Array2D<std::complex<T>> analyze(X begin, X end){
             Array2D<std::complex<T>> x(batch, nch ,begin, end);
+#ifndef INPLACE_ALGO
+            x.transpose(buffer);
+            //x.reshape(x.ncols(), x.rows());
+            x.swap(buffer);
+#else
             x.transpose_self();
+#endif
+            //x.swap(buffer);
             analyze_transposed(x);
             return x;
         }
@@ -75,7 +90,7 @@ namespace cpfb{
 
         void analyze_transposed(Array2D<std::complex<T>>& x){
 /*
- *elements of x should be in order :
+ *elements of row-major 2D array x should be in order :
  0  8 16 24
  1  9 17 25
  2 10 18 26
@@ -86,7 +101,15 @@ namespace cpfb{
  7 15 23 31
  */
             fir.filter(x);
+            //x.transpose_self();
+            //std::cout<<x<<std::endl;
+#ifndef INPLACE_ALGO
+            x.transpose(buffer);
+            //x.reshape(x.ncols(), x.nrows());
+            x.swap(buffer);
+#else
             x.transpose_self();
+#endif
             FftwTraits<T>::execute_dft(plan, x.data.get(), x.data.get());
         }
     };

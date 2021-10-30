@@ -56,9 +56,10 @@ namespace cpfb{
         }
 
         void swap(Array2D<T>& rhs){
-            assert(rhs._nrows==_nrows);
-            assert(rhs._ncols==_ncols);
+            assert(rhs.size()==size());
             data.swap(rhs.data);
+            std::swap(_nrows, rhs._nrows);
+            std::swap(_ncols, rhs._ncols);
         }
 
         size_t nrows()const{
@@ -107,6 +108,7 @@ namespace cpfb{
             return *this;
         }
 
+
         Array2D<T> transpose()const{
             Array2D<T> result(ncols(), nrows());
             for(size_t i=0;i<_nrows;++i){
@@ -115,6 +117,28 @@ namespace cpfb{
                 }
             }
             return result;
+        }
+
+        void transpose(Array2D<T>& result)const{
+            assert(result.size()==size());
+            result._ncols=_nrows;
+            result._nrows=_ncols;
+            for(size_t i=0;i<_nrows;++i){
+                for(size_t j=0;j<_ncols;++j){
+                    result.get(j,i)=get(i,j);
+                }
+            }
+        }
+
+        void transpose_self_keep_data(){
+            //std::swap(_nrows, _ncols);
+            reshape(_ncols, _nrows);
+        }
+
+        void reshape(size_t nrows1, size_t ncols1){
+            assert(nrows1*ncols1==size());
+            _nrows=nrows1;
+            _ncols=ncols1;
         }
 
         void transpose_self()
