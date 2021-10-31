@@ -1,9 +1,10 @@
 #include <memory>
 #include <iostream>
-#include <array2d.hpp>
-#include <batch_fir.hpp>
-#include <cspfb.hpp>
-#include <windowed_fir.hpp>
+#include <cpfb/array2d.hpp>
+#include <cpfb/batch_fir.hpp>
+#include <cpfb/cspfb.hpp>
+#include <cpfb/windowed_fir.hpp>
+#include <cpfb/oscillator.hpp>
 using namespace cpfb;
 
 
