@@ -2,10 +2,10 @@
 #define CSPFB_HPP
 #include <complex>
 #include <concepts>
+#include <span>
 #include "fft_wrapper.hpp"
 #include "batch_fir.hpp"
 
-//#define INPLACE_ALGO
 
 namespace cpfb{
     template <std::floating_point T>
@@ -14,9 +14,7 @@ namespace cpfb{
         size_t batch;
         BatchFIR<T, std::complex<T>> fir;
         typename FftwTraits<T>::UniquePtrPlan plan;
-#ifndef INPLACE_ALGO
-        Array2D<std::complex<T>> buffer;
-#endif
+        Array2D<std::complex<T>, true> buffer;
 
         typename FftwTraits<T>::UniquePtrPlan init_plan(size_t nch, size_t batch){
             int n[]={(int)nch};
@@ -37,7 +35,7 @@ namespace cpfb{
         }
 
         template <std::ranges::range H>
-        Array2D<T> calc_coeffs(size_t nch, const H& h0){
+        Array2D<T, true> calc_coeffs(size_t nch, const H& h0){
             auto tap=(h0.end()-h0.begin())/nch;
             assert(tap*nch==(h0.end()-h0.begin()));
             Array2D<T> c(tap, nch, h0);
@@ -56,9 +54,7 @@ namespace cpfb{
         CsPFB(size_t nch1, const H& h0)
         :nch(nch1), batch((h0.end()-h0.begin())/nch1-1),
         fir(calc_coeffs(nch1, h0)), plan(init_plan(nch, batch))
-#ifndef INPLACE_ALGO
         ,buffer(nch1, batch)
-#endif
         {
         }
 
@@ -67,28 +63,28 @@ namespace cpfb{
         }
 
 
-        template <std::forward_iterator X>
-        Array2D<std::complex<T>> analyze(X begin, X end){
-            Array2D<std::complex<T>> x(batch, nch ,begin, end);
-#ifndef INPLACE_ALGO
-            x.transpose(buffer);
+        Array2D<std::complex<T>, true> analyze(std::span<std::complex<T>> data){
+            assert(data.size()==size_per_shoot());
+            Array2D<std::complex<T>, false> x(batch, nch ,data.data());
+            auto buffer1=x.transpose();
             //x.reshape(x.ncols(), x.rows());
-            x.swap(buffer);
-#else
-            x.transpose_self();
-#endif
             //x.swap(buffer);
-            analyze_transposed(x);
+            //x.swap(buffer);
+            analyze_transposed(buffer1);
+            return buffer1;
+        }
+
+        Array2D<std::complex<T>, false> analyze_insitu(std::span<std::complex<T>> data){
+            assert(data.size()==size_per_shoot());
+            Array2D<std::complex<T>, false> x(batch, nch, data.data());
+            x.transpose(buffer);
+            fir.filter(buffer);
+            buffer.transpose(x);
+            FftwTraits<T>::execute_dft(plan, x.data.get(), x.data.get());
             return x;
         }
 
-
-        template <std::ranges::range X>
-        Array2D<std::complex<T>> analyze(const X& x1){
-            return analyze(x1.begin(), x1.end());
-        }
-
-        void analyze_transposed(Array2D<std::complex<T>>& x){
+        void analyze_transposed(Array2D<std::complex<T>, true>& x){
 /*
  *elements of row-major 2D array x should be in order :
  0  8 16 24
@@ -103,13 +99,9 @@ namespace cpfb{
             fir.filter(x);
             //x.transpose_self();
             //std::cout<<x<<std::endl;
-#ifndef INPLACE_ALGO
             x.transpose(buffer);
             //x.reshape(x.ncols(), x.nrows());
             x.swap(buffer);
-#else
-            x.transpose_self();
-#endif
             FftwTraits<T>::execute_dft(plan, x.data.get(), x.data.get());
         }
     };

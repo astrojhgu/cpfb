@@ -13,9 +13,10 @@ std::vector<T> ampl_response(T dphi_dpt, size_t nch, size_t tap, T k, size_t nsi
     CsPFB<T> pfb(nch, coeff<T>(nch, tap, k));
     std::vector<std::complex<T>> signal(nch*(tap-1)*nsignal);
     osc.fill(signal);
-    Array2D<std::complex<T>> x(nch, (tap-1));
+    Array2D<std::complex<T>, false> x(nch, (tap-1), nullptr);
     for(int i=0;i<nsignal;++i){
-        x=pfb.analyze(signal.begin()+i*nch*(tap-1), signal.begin()+(i+1)*nch*(tap-1));
+        //x=pfb.analyze(signal.begin()+i*nch*(tap-1), signal.begin()+(i+1)*nch*(tap-1));
+        x=pfb.analyze_insitu(std::span<std::complex<double>>(signal.begin()+i*nch*(tap-1), nch*(tap-1)));
     }
     auto spec=x.transform([](const std::complex<T>& x)->T{return std::abs(x);});
     std::vector<T> result(spec.ncols());
@@ -35,7 +36,7 @@ int main(){
 
     
     for(auto dphi_dpt=-PI<Tfloat>();dphi_dpt<PI<Tfloat>();dphi_dpt+=0.001){
-        auto spec=ampl_response(dphi_dpt, nch, 64, (Tfloat)0.3, 32);
+        auto spec=ampl_response(dphi_dpt, nch, 64, (Tfloat)0.3, 128);
         for(auto& x: spec){
             std::cout<<x<<" ";
         }

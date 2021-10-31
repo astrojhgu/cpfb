@@ -7,16 +7,28 @@
 #include <cassert>
 #include <iterator>
 #include <ranges>
+#include <type_traits>
+#include <functional>
 
 namespace cpfb{
-    template <typename T>
+    template <typename T, bool owned=true>
     struct Array2D{
         size_t _nrows;
         size_t _ncols;
-        std::unique_ptr<T[]> data;
+        std::unique_ptr<T[], std::function<void(T*)>> data;
 
         Array2D(size_t nrows1, size_t ncols1)
-        :_nrows(nrows1), _ncols(ncols1), data(new T[nrows1*ncols1]){}
+        :_nrows(nrows1), _ncols(ncols1), data(new T[nrows1*ncols1], [](T* p){
+                delete[] p;
+            }){
+            std::enable_if_t<owned, int> a=1;
+        }
+
+        Array2D(size_t nrows1, size_t ncols1, T* p)
+        :_nrows(nrows1), _ncols(ncols1), data(p, [](T* p){
+            }){
+            std::enable_if_t<!owned, int> a=1;
+        }
 
         template <std::ranges::range U>
         Array2D(size_t nrows1, size_t ncols1, const U& rhs)
@@ -30,10 +42,10 @@ namespace cpfb{
             assert(end-begin==nrows1*ncols1);
         }
 
-        Array2D(const Array2D<T>&)=delete;
-        Array2D& operator= (const Array2D<T>&) = delete;
+        Array2D(const Array2D<T,owned>&)=delete;
+        Array2D& operator= (const Array2D<T,owned>&) = delete;
 
-        Array2D(Array2D<T>&& rhs)
+        Array2D(Array2D<T,owned>&& rhs)
         :_nrows(rhs.nrows()), _ncols(rhs.ncols()), data(std::move(rhs.data))
         {
             rhs._nrows=0;
@@ -49,13 +61,16 @@ namespace cpfb{
             return *this;
         }
 
-        Array2D clone()const{
-            Array2D<T> result(_nrows, _ncols);
+        Array2D<T, true> clone()const{
+            Array2D<T,true> result(_nrows, _ncols);
             std::copy(data.get(), data.get()+size(), result.data.get());
             return result;
         }
 
-        void swap(Array2D<T>& rhs){
+        void swap(Array2D<T,owned>& rhs){
+            if(!owned){
+                assert(0);
+            }
             assert(rhs.size()==size());
             data.swap(rhs.data);
             std::swap(_nrows, rhs._nrows);
@@ -90,7 +105,7 @@ namespace cpfb{
             return data[i*_ncols+j];
         }
 
-        Array2D<T>& reverse_col_self(){
+        Array2D& reverse_col_self(){
             for(size_t i=0;i<_nrows;++i){
                 for(size_t j=0;j<_ncols/2;++j){
                     std::swap(get(i,j), get(i, _ncols-1-j));
@@ -99,7 +114,7 @@ namespace cpfb{
             return *this;
         }
 
-        Array2D<T>& reverse_row_self(){
+        Array2D& reverse_row_self(){
             for(size_t i=0;i<_nrows/2;++i){
                 for(size_t j=0;j<_ncols;++j){
                     std::swap(get(_nrows-1-i,j), get(i, j));
@@ -109,8 +124,8 @@ namespace cpfb{
         }
 
 
-        Array2D<T> transpose()const{
-            Array2D<T> result(ncols(), nrows());
+        Array2D<T, true> transpose()const{
+            Array2D<T,true> result(ncols(), nrows());
             for(size_t i=0;i<_nrows;++i){
                 for(size_t j=0;j<_ncols;++j){
                     result(j,i)=this->get(i,j);
@@ -119,7 +134,8 @@ namespace cpfb{
             return result;
         }
 
-        void transpose(Array2D<T>& result)const{
+        template <bool owned1>
+        void transpose(Array2D<T,owned1>& result)const{
             assert(result.size()==size());
             result._ncols=_nrows;
             result._nrows=_ncols;
@@ -128,11 +144,6 @@ namespace cpfb{
                     result.get(j,i)=get(i,j);
                 }
             }
-        }
-
-        void transpose_self_keep_data(){
-            //std::swap(_nrows, _ncols);
-            reshape(_ncols, _nrows);
         }
 
         void reshape(size_t nrows1, size_t ncols1){
@@ -171,9 +182,9 @@ namespace cpfb{
         }
 
         template <typename F>
-        auto transform(F&& f)const ->Array2D<typename std::invoke_result<F, T>::type> {
+        auto transform(F&& f)const ->Array2D<typename std::invoke_result<F, T>::type, true> {
             typedef decltype(f(get(0,0))) Tres;
-            Array2D<Tres> result(_nrows, _ncols);
+            Array2D<Tres, true> result(_nrows, _ncols);
             for(int i=0;i<size();++i){
                 result.data[i]=f(data[i]);
             }
@@ -181,8 +192,8 @@ namespace cpfb{
         }
     };
 
-    template <typename T>
-    std::ostream& operator<<(std::ostream& os, const Array2D<T>& x){
+    template <typename T, bool owned>
+    std::ostream& operator<<(std::ostream& os, const Array2D<T, owned>& x){
         os<<"Array ("<<x.nrows()<<" x "<<x.ncols()<<"): ["<<std::endl;
         for(size_t i=0;i<x.nrows();++i){
             for(size_t j=0;j<x.ncols();++j){

@@ -5,10 +5,10 @@
 namespace cpfb{
     template <typename C, typename D>
     struct BatchFIR{
-        Array2D<C> coeff_rev;
-        Array2D<D> state;
+        Array2D<C, true> coeff_rev;
+        Array2D<D, true> state;
 
-        BatchFIR(Array2D<C>&& c)
+        BatchFIR(Array2D<C, true>&& c)
         :coeff_rev(std::move(c)), state(coeff_rev.nrows(), coeff_rev.ncols()-1)
         {
             coeff_rev.reverse_col_self();
@@ -21,7 +21,7 @@ namespace cpfb{
         BatchFIR& operator=(const BatchFIR&)=delete;
         BatchFIR& operator=(BatchFIR&&)=default;
 
-        void filter(Array2D<D>& x){
+        void filter(Array2D<D, true>& x){
             assert(x.nrows()==coeff_rev.nrows());
             assert(x.ncols()==state.ncols());
             auto coeff_rev_nrows=coeff_rev.nrows();
