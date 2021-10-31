@@ -3,6 +3,7 @@
 #include <concepts>
 #include <complex>
 #include <iterator>
+#include "utils.hpp"
 
 namespace cpfb{
     template <std::floating_point T>
@@ -51,7 +52,7 @@ namespace cpfb{
         template <std::ranges::range R>
         void shift(R& x){
             for(auto& x1:x){
-                x1*=factor[(idx++)%(2*nch)];
+                x1*=factor[idx++];
                 if (idx>=2*nch){
                     idx=0;
                 }
