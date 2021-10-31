@@ -36,6 +36,28 @@ namespace cpfb{
             fill(x.begin(), x.end());
         }
     };
+
+    template <std::floating_point T>
+    struct HalfChShifter{
+        size_t nch;
+        std::vector<std::complex<T>> factor;
+        size_t idx;
+
+        HalfChShifter(size_t nch1, int direction=-1)
+        :nch(nch1), factor(nch1*2), idx(0){
+            COscillator<T> osc(0.0, direction*PI<T>()/nch);
+            osc.fill(factor);
+        }
+        template <std::ranges::range R>
+        void shift(R& x){
+            for(auto& x1:x){
+                x1*=factor[(idx++)%(2*nch)];
+                if (idx>=2*nch){
+                    idx=0;
+                }
+            }
+        }
+    };
 }
 
 

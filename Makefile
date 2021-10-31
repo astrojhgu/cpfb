@@ -1,4 +1,4 @@
-targets=test validate_cspfb_ampl_response
+targets=test validate_cspfb_ampl_response benchmark
 
 headers=include/cpfb/array2d.hpp include/cpfb/batch_fir.hpp include/cpfb/fft_wrapper.hpp include/cpfb/cspfb.hpp include/cpfb/windowed_fir.hpp include/cpfb/oscillator.hpp
 all:$(targets)
@@ -13,7 +13,8 @@ test: test.cpp $(headers)
 validate_cspfb_ampl_response: src/validate_cspfb_ampl_response.cpp $(headers)
 	g++ -o $@ $< -O3 -g $(INC) $(LIBS) --std=c++20
 
-
+benchmark: src/benchmark.cpp $(headers)
+	g++ -o $@ $< -O3 -g $(INC) $(LIBS) --std=c++20
 
 clean:
 	rm -f $(targets)

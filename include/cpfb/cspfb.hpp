@@ -97,10 +97,7 @@ namespace cpfb{
  7 15 23 31
  */
             fir.filter(x);
-            //x.transpose_self();
-            //std::cout<<x<<std::endl;
             x.transpose(buffer);
-            //x.reshape(x.ncols(), x.nrows());
             x.swap(buffer);
             FftwTraits<T>::execute_dft(plan, x.data.get(), x.data.get());
         }

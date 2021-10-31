@@ -21,18 +21,19 @@ namespace cpfb{
         :_nrows(nrows1), _ncols(ncols1), data(new T[nrows1*ncols1], [](T* p){
                 delete[] p;
             }){
-            std::enable_if_t<owned, int> a=1;
+            static_assert(owned);
         }
 
         Array2D(size_t nrows1, size_t ncols1, T* p)
         :_nrows(nrows1), _ncols(ncols1), data(p, [](T* p){
             }){
-            std::enable_if_t<!owned, int> a=1;
+            static_assert(!owned);
         }
 
         template <std::ranges::range U>
         Array2D(size_t nrows1, size_t ncols1, const U& rhs)
         :Array2D(nrows1, ncols1, rhs.begin(), rhs.end()){
+            static_assert(owned);
         }
 
         template <std::forward_iterator U>
@@ -40,6 +41,7 @@ namespace cpfb{
         :Array2D(nrows1, ncols1){
             std::copy(begin, end, data.get());
             assert(end-begin==nrows1*ncols1);
+            static_assert(owned);
         }
 
         Array2D(const Array2D<T,owned>&)=delete;
