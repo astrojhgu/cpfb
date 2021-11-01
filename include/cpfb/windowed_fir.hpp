@@ -2,6 +2,7 @@
 #define WINDOWED_FIR
 #include <cmath>
 #include <vector>
+#include <concepts>
 #include <numeric>
 #include "utils.hpp"
 
@@ -16,12 +17,29 @@ namespace cpfb{
         return a0-a1*std::cos(2*x)+a2*std::cos(4*x)-a3*std::cos(6*x);
     }
 
+    template <typename T>
+    T raised_cosine(size_t i, size_t n){
+        auto x=std::sin(PI<T>()*i/n);
+        return x*x;
+    }
 
     template <typename T>
-    void apply_blackman_window(std::vector<T>& workspace){
-        size_t n=workspace.size();
-        for(size_t i=0;i<n;++i){
-            workspace[i]*=blackman_window<T>(i, n);
+    T blackman_nuttall(size_t i, size_t n){
+        T a0=0.3635819;
+        T a1=0.4891775;
+        T a2=0.1365995;
+        T a3=0.0106411;
+        return a0-a1*cos(2*PI<T>()*i/n)+a2*cos(4*PI<T>()*i/n)-a3*cos(6*PI<T>()*i/n);
+    }
+
+    template <std::ranges::range R, typename F>
+    void apply_window(R& workspace, F&& f){
+        auto iter=workspace.begin();
+        auto end=workspace.end();
+        size_t n=end-iter;
+        size_t i=0;
+        for(;iter!=end;++i,++iter){
+            *iter*=f(i, n);
         }
     }
 
@@ -66,7 +84,10 @@ template <typename T>
         auto a=lp_coeff(nch, tap_per_ch, k);
         symmetrize(a);
         auto b=to_time_domain(a);
-        apply_blackman_window(b);
+        //apply_blackman_window(b);
+        //apply_window(b, (T(*)(size_t,size_t))(blackman_window));
+        apply_window(b, (T(*)(size_t,size_t))(blackman_nuttall));
+        
         return b;
     }    
 }

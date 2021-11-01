@@ -21,8 +21,8 @@ std::vector<T> ampl_response(T dphi_dpt, size_t nch, size_t tap, T k, size_t nsi
         //x=pfb.analyze(signal.begin()+i*nch*(tap-1), signal.begin()+(i+1)*nch*(tap-1));
         channelized=pfb.analyze(std::span<std::complex<double>>(signal.begin()+i*nch*(tap-1), nch*(tap-1)));
     }
-    auto spec_even=channelized.first.transform([](const std::complex<T>& x)->T{return std::abs(x);});
-    auto spec_odd=channelized.second.transform([](const std::complex<T>& x)->T{return std::abs(x);});
+    auto spec_even=channelized.first.transform([](const std::complex<T>& x)->T{return std::norm(x);});
+    auto spec_odd=channelized.second.transform([](const std::complex<T>& x)->T{return std::norm(x);});
     std::vector<T> result(spec_even.ncols()*2);
     for(size_t i=0;i<spec_even.nrows();++i){
         for(size_t j=0;j<spec_even.ncols();++j){
@@ -36,10 +36,10 @@ std::vector<T> ampl_response(T dphi_dpt, size_t nch, size_t tap, T k, size_t nsi
 
 
 int main(){
-    size_t nch=16;
+    size_t nch=32;
     using Tfloat=double;    
     for(auto dphi_dpt=-PI<Tfloat>();dphi_dpt<PI<Tfloat>();dphi_dpt+=0.001){
-        auto spec=ampl_response(dphi_dpt, nch, 31, (Tfloat)0.34, 4);
+        auto spec=ampl_response(dphi_dpt, nch,12, (Tfloat)0.44, 2);
         for(auto& x: spec){
             std::cout<<x<<" ";
         }
