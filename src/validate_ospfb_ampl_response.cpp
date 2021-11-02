@@ -36,12 +36,13 @@ std::vector<T> ampl_response(T dphi_dpt, size_t nch, size_t tap, T k, size_t nsi
 
 
 int main(){
-    size_t nch=32;
+    size_t nch=16;
     using Tfloat=double;    
     for(auto dphi_dpt=-PI<Tfloat>();dphi_dpt<PI<Tfloat>();dphi_dpt+=0.001){
-        auto spec=ampl_response(dphi_dpt, nch,12, (Tfloat)0.44, 2);
+        auto spec=ampl_response(dphi_dpt, nch,15, (Tfloat)0.5, 2);
+        std::cout<<dphi_dpt<<" ";
         for(auto& x: spec){
-            std::cout<<x<<" ";
+            std::cout<<" "<<x;
         }
         std::cout<<std::endl;
     }

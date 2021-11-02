@@ -1,4 +1,4 @@
-targets=test benchmark validate_ospfb_ampl_response
+targets=test benchmark validate_ospfb_ampl_response validate_cspfb_ampl_response
 
 headers=include/cpfb/array2d.hpp include/cpfb/batch_fir.hpp include/cpfb/fft_wrapper.hpp include/cpfb/cspfb.hpp include/cpfb/windowed_fir.hpp include/cpfb/oscillator.hpp
 all:$(targets)

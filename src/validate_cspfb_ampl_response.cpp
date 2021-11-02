@@ -21,7 +21,7 @@ std::vector<T> ampl_response(T dphi_dpt, size_t nch, size_t tap, T k, size_t nsi
         //x=pfb.analyze(signal.begin()+i*nch*(tap-1), signal.begin()+(i+1)*nch*(tap-1));
         x=pfb.analyze_insitu(std::span<std::complex<double>>(signal.begin()+i*nch*(tap-1), nch*(tap-1)));
     }
-    auto spec=x.transform([](const std::complex<T>& x)->T{return std::abs(x);});
+    auto spec=x.transform([](const std::complex<T>& x)->T{return std::norm(x);});
     std::vector<T> result(spec.ncols());
     for(size_t i=0;i<spec.nrows();++i){
         for(size_t j=0;j<spec.ncols();++j){
@@ -39,9 +39,10 @@ int main(){
 
     
     for(auto dphi_dpt=-PI<Tfloat>();dphi_dpt<PI<Tfloat>();dphi_dpt+=0.001){
-        auto spec=ampl_response(dphi_dpt, nch, 64, (Tfloat)0.2, 4);
+        auto spec=ampl_response(dphi_dpt, nch, 15, (Tfloat)0.5, 2);
+        std::cout<<dphi_dpt<<" ";
         for(auto& x: spec){
-            std::cout<<x<<" ";
+            std::cout<<" "<<x;
         }
         std::cout<<std::endl;
     }
