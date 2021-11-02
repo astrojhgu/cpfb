@@ -87,7 +87,6 @@ template <typename T>
         //apply_blackman_window(b);
         //apply_window(b, (T(*)(size_t,size_t))(blackman_window));
         apply_window(b, (T(*)(size_t,size_t))(blackman_nuttall));
-        
         return b;
     }    
 }
