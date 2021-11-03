@@ -46,6 +46,7 @@ namespace cpfb{
 
         CsPFB()=delete;
         CsPFB(const CsPFB<T>&)=delete;
+        CsPFB(CsPFB<T>&&)=default;
         CsPFB<T>& operator=(const CsPFB<T>& rhs)=delete;
 
 

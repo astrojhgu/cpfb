@@ -24,11 +24,15 @@ std::vector<T> ampl_response(T dphi_dpt, size_t nch, size_t tap, T k, size_t nsi
     }
     auto spec_even=channelized.first.transform([](const std::complex<T>& x)->T{return std::norm(x);});
     auto spec_odd=channelized.second.transform([](const std::complex<T>& x)->T{return std::norm(x);});
+
+    auto phase_even=channelized.first.transform([](const std::complex<T>& x)->T{return std::arg(x);});
+    auto phase_odd=channelized.second.transform([](const std::complex<T>& x)->T{return std::arg(x);});
+
     std::vector<T> result(spec_even.ncols()*2);
     for(size_t i=0;i<spec_even.nrows();++i){
         for(size_t j=0;j<spec_even.ncols();++j){
             result[2*j]+=spec_even(i,j);
-            result[2*j+1]+=spec_odd(i,j);
+            result[2*j+1]+=spec_even(i,j);
         }
     }
     return result;

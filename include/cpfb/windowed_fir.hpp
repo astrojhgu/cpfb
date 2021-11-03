@@ -76,7 +76,7 @@ template <typename T>
         std::transform(a.begin(), a.end(), std::back_inserter(b), [](auto x){return x.real();});
         auto s=std::accumulate(b.begin(), b.end(), (T)0);
         std::transform(b.begin(), b.end(), b.begin(), [=](T x){return x/s;});
-        return fftshift(b);
+        return fftshift(std::span(b.begin(), b.size()));
     }
 
     template <typename T>

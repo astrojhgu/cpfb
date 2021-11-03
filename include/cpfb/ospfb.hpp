@@ -2,9 +2,19 @@
 #define OSPFB_HPP
 #include "cspfb.hpp"
 #include "oscillator.hpp"
+#include <concepts>
 
 namespace cpfb{
-    
+    template <std::floating_point T>
+    std::complex<T> to_complex(const T& x){
+        return std::complex<T>(x);
+    }
+
+    template <std::floating_point T>
+    std::complex<T> to_complex(const std::complex<T>& x){
+        return x;
+    }
+
     template <std::floating_point T>
     struct OsPFB{
         CsPFB<T> even_pfb;
@@ -15,6 +25,13 @@ namespace cpfb{
 
         OsPFB()=delete;
         OsPFB(const OsPFB<T>&)=delete;
+        OsPFB(OsPFB&& rhs)
+        :even_pfb(std::move(rhs.even_pfb))
+        ,odd_pfb(std::move(rhs.odd_pfb))
+        , even_buffer(std::move(rhs.even_buffer))
+        , odd_buffer(std::move(rhs.odd_buffer))
+        , shifter(std::move(rhs.shifter))
+        {}
         OsPFB<T>& operator=(const OsPFB<T>& rhs)=delete;
 
 
@@ -28,11 +45,13 @@ namespace cpfb{
         {
         }
 
+        template <typename U>
         std::pair<Array2D<std::complex<T>, false>,
-        Array2D<std::complex<T>, false>> analyze(std::span<std::complex<T>> data){
+        Array2D<std::complex<T>, false>> analyze(std::span<U> data){
             assert(data.size()==even_buffer.size());
-            std::copy(data.begin(), data.end(), even_buffer.begin());
-            std::copy(data.begin(), data.end(), odd_buffer.begin());
+            //std::copy(data.begin(), data.end(), even_buffer.begin());
+            std::transform(data.begin(), data.end(), even_buffer.begin(), (std::complex<T>(*)(const U&))to_complex);
+            std::copy(even_buffer.begin(), even_buffer.end(), odd_buffer.begin());
             shifter.shift(odd_buffer);
             auto result_even=even_pfb.analyze_insitu(even_buffer);
             auto result_odd=odd_pfb.analyze_insitu(odd_buffer);

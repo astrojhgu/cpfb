@@ -17,16 +17,18 @@ namespace cpfb{
         size_t _ncols;
         std::unique_ptr<T[], std::function<void(T*)>> data;
 
+        Array2D()
+        :_nrows(0), _ncols(0), data(nullptr,  [](T* p){if(owned){delete p;}}){
+            static_assert(!owned);
+        }
+
         Array2D(size_t nrows1, size_t ncols1)
-        :_nrows(nrows1), _ncols(ncols1), data(new T[nrows1*ncols1], [](T* p){
-                delete[] p;
-            }){
+        :_nrows(nrows1), _ncols(ncols1), data(new T[nrows1*ncols1], [](T* p){if(owned){delete p;}}){
             static_assert(owned);
         }
 
         Array2D(size_t nrows1, size_t ncols1, T* p)
-        :_nrows(nrows1), _ncols(ncols1), data(p, [](T* p){
-            }){
+        :_nrows(nrows1), _ncols(ncols1), data(p, [](T* p){if(owned){delete p;}}){
             static_assert(!owned);
         }
 
@@ -54,12 +56,27 @@ namespace cpfb{
             rhs._ncols=0;
         }
 
+        template <bool owned1>
+        Array2D(Array2D<T, owned1>& rhs)
+        :Array2D(rhs._nrows, rhs._ncols, rhs.data.get())
+        {
+        }
+
+
         Array2D& operator=(Array2D&& rhs){
             data=std::move(rhs.data);
             _nrows=rhs._nrows;
             rhs._nrows=0;
             _ncols=rhs._ncols;
             rhs._ncols=0;
+            return *this;
+        }
+
+        Array2D& operator=(Array2D& rhs){
+            static_assert(!owned);
+            _nrows=rhs._nrows;
+            _ncols=rhs._ncols;
+            data.reset(rhs.data.get());
             return *this;
         }
 
