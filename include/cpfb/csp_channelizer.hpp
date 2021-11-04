@@ -81,7 +81,9 @@ namespace cpfb{
         }
 
         template <bool owned>
-        void feed_station_data(Array2D<std::complex<T>, owned>& even, Array2D<std::complex<T>, owned>& odd){
+        void feed_station_data(OsPFBOutput<T, owned>& data){
+            auto& even=data.even;
+            auto& odd=data.odd;
             assert(even.ncols()==odd.ncols());
             assert(even.nrows()==odd.nrows());
             assert(even.ncols()==nch_coarse);

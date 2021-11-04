@@ -46,9 +46,6 @@ namespace cpfb{
             static_assert(owned);
         }
 
-        Array2D(const Array2D<T,owned>&)=delete;
-        Array2D& operator= (const Array2D<T,owned>&) = delete;
-
         Array2D(Array2D<T,owned>&& rhs)
         :_nrows(rhs.nrows()), _ncols(rhs.ncols()), data(std::move(rhs.data))
         {
@@ -72,13 +69,15 @@ namespace cpfb{
             return *this;
         }
 
-        Array2D& operator=(Array2D& rhs){
+        template <bool owned1>
+        Array2D<T,owned>& operator=(Array2D<T, owned1>& rhs){
             static_assert(!owned);
             _nrows=rhs._nrows;
             _ncols=rhs._ncols;
             data.reset(rhs.data.get());
             return *this;
         }
+
 
         Array2D<T, true> clone()const{
             Array2D<T,true> result(_nrows, _ncols);

@@ -14,15 +14,13 @@ std::vector<T> ampl_response(T dphi_dpt, size_t nch, size_t tap, T k, size_t nsi
     std::vector<std::complex<T>> signal(nch*(tap-1)*nsignal);
     //COscillator<T> osc1(0.0, PI<T>()/nch);
     osc.fill(signal);
-    auto channelized=std::make_pair(
-        Array2D<std::complex<T>, false>(nch, (tap-1), nullptr)
-        ,Array2D<std::complex<T>, false>(nch, (tap-1), nullptr));
+    OsPFBOutput<T, false> channelized(nch, tap-1);
     for(int i=0;i<nsignal;++i){
         //x=pfb.analyze(signal.begin()+i*nch*(tap-1), signal.begin()+(i+1)*nch*(tap-1));
         channelized=pfb.analyze(std::span<std::complex<double>>(signal.begin()+i*nch*(tap-1), nch*(tap-1)));
     }
-    auto spec_even=channelized.first.transform([](const std::complex<T>& x)->T{return std::norm(x);});
-    auto spec_odd=channelized.second.transform([](const std::complex<T>& x)->T{return std::norm(x);});
+    auto spec_even=channelized.even.transform([](const std::complex<T>& x)->T{return std::norm(x);});
+    auto spec_odd=channelized.odd.transform([](const std::complex<T>& x)->T{return std::norm(x);});
     std::vector<T> result(spec_even.ncols()*2);
     for(size_t i=0;i<spec_even.nrows();++i){
         for(size_t j=0;j<spec_even.ncols();++j){

@@ -15,6 +15,44 @@ namespace cpfb{
         return x;
     }
 
+    template <typename T, bool owned>
+    struct OsPFBOutput{
+        size_t nch_each;
+        size_t batch;
+        Array2D<std::complex<T>, owned> even;
+        Array2D<std::complex<T>, owned> odd;
+
+        OsPFBOutput(size_t nch1, size_t batch1)
+        :nch_each(nch1), batch(batch1),
+        even(batch, nch_each, nullptr), odd(batch, nch_each, nullptr){
+            static_assert(!owned);
+        }
+
+        template <bool owned1>
+        OsPFBOutput(size_t nch1, size_t batch1, Array2D<std::complex<T>, owned1>& e, Array2D<std::complex<T>, owned1>& o)
+        :nch_each(nch1),batch(batch1), even(e), odd(o)
+        {
+        }
+
+        OsPFBOutput& operator=(OsPFBOutput<T, false>&& rhs){
+            static_assert(!owned);
+            nch_each=rhs.nch_each;
+            batch=rhs.batch;
+            even=std::move(rhs.even);
+            odd=std::move(rhs.odd);
+            return *this;
+        }
+
+        OsPFBOutput& operator=(OsPFBOutput<T, true>&& rhs){
+            static_assert(!owned);
+            nch_each=rhs.nch_each;
+            batch=rhs.batch;
+            even=std::move(rhs.even);
+            odd=std::move(rhs.odd);
+            return *this;
+        }
+    };
+
     template <std::floating_point T>
     struct OsPFB{
         CsPFB<T> even_pfb;
@@ -46,8 +84,7 @@ namespace cpfb{
         }
 
         template <typename U>
-        std::pair<Array2D<std::complex<T>, false>,
-        Array2D<std::complex<T>, false>> analyze(std::span<U> data){
+        OsPFBOutput<T, false> analyze(std::span<U> data){
             assert(data.size()==even_buffer.size());
             //std::copy(data.begin(), data.end(), even_buffer.begin());
             std::transform(data.begin(), data.end(), even_buffer.begin(), (std::complex<T>(*)(const U&))to_complex);
@@ -55,7 +92,8 @@ namespace cpfb{
             shifter.shift(odd_buffer);
             auto result_even=even_pfb.analyze_insitu(even_buffer);
             auto result_odd=odd_pfb.analyze_insitu(odd_buffer);
-            return std::make_pair(std::move(result_even), std::move(result_odd));
+            //return std::make_pair(std::move(result_even), std::move(result_odd));
+            return OsPFBOutput<T, false>{even_pfb.nch, even_pfb.batch, result_even, result_odd};
         }
     };
 }
