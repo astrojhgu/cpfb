@@ -127,6 +127,7 @@ namespace cpfb{
                 std::copy(y.data.get()+secondary_batch/4, y.data.get()+secondary_batch/4+y1.size(), y1.data.get());
             }
             output_buffer.transpose_self();
+            assert(output_buffer.ncols()==nch_fine_per_coarse*nch_coarse/2);
             return true;
         }
     };
